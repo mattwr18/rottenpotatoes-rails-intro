@@ -11,22 +11,9 @@ class MoviesController < ApplicationController
 
   def index
     @all_ratings = Movie.all_ratings
-    sort = params[:sort]
-    session[:sort] = sort if sort
-    ratings = params[:ratings]
-    session[:ratings] = ratings if ratings
-    @movies = if session[:sort] && session[:ratings]
-                @selected_ratings = session[:ratings]
-                Movie.where(rating: @selected_ratings.keys).order(session[:sort])
-              elsif ratings
-                @selected_ratings = ratings
-                Movie.where(rating: @selected_ratings.keys)
-              else
-                @selected_ratings = @all_ratings
-                Movie.all.order(sort)
-              end
-    @title_header = 'hilite' if sort == 'title' || session[:sort] == 'title'
-    @release_date_header = 'hilite' if sort == 'release_date' || session[:sort] == 'release_date'
+    params_session_persistency
+    set_movies
+    sort_highlighting
   end
 
   def new
@@ -55,5 +42,30 @@ class MoviesController < ApplicationController
     @movie.destroy
     flash[:notice] = "Movie '#{@movie.title}' deleted."
     redirect_to movies_path
+  end
+
+  def params_session_persistency
+    @sort = params[:sort]
+    session[:sort] = @sort if @sort
+    @ratings = params[:ratings]
+    session[:ratings] = @ratings if @ratings
+  end
+
+  def set_movies
+    @movies = if session[:sort] && session[:ratings]
+                @selected_ratings = session[:ratings]
+                Movie.where(rating: @selected_ratings.keys).order(session[:sort])
+              elsif @ratings
+                @selected_ratings = @ratings
+                Movie.where(rating: @selected_ratings.keys)
+              else
+                @selected_ratings = @all_ratings
+                Movie.all.order(@sort)
+              end
+  end
+
+  def sort_highlighting
+    @title_header = 'hilite' if @sort == 'title' || session[:sort] == 'title'
+    @release_date_header = 'hilite' if @sort == 'release_date' || session[:sort] == 'release_date'
   end
 end
